@@ -21,10 +21,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+            echo "Missing SUPABASE_ACCESS_TOKEN"
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.SUPABASE_DB_URL }}" ]; then
+            echo "Missing SUPABASE_DB_URL"
+            exit 1
+          fi
+
+          echo "Required secrets are present"
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
+      - name: Check Supabase CLI version
+        run: supabase --version
+
+      - name: List migrations
+        run: ls -la supabase/migrations
+
       - name: Push database migrations
-        run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}" --yes
+        run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}" --yes --debug
