@@ -1,0 +1,2 @@
+-- Seed data will be added after creating the first school.
+-- We will insert payment methods and document sequences using the real school_id.
