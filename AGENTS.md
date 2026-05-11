@@ -195,18 +195,26 @@ Workflow file:
 
 ---
 
-## Frontend Structure (Planned)
+## Frontend Structure
 
 ```txt
-app/
-+-- login/
-+-- signup/
-+-- dashboard/
-    +-- students/
-    +-- guardians/
-    +-- fees/
-    +-- payments/
-    +-- reports/
+apps/
++-- web/
+    +-- app/
+    |   +-- (auth)/
+    |   |   +-- login/
+    |   |   +-- signup/
+    |   |   +-- forgot-password/
+    |   +-- dashboard/
+    +-- components/
+    +-- lib/
+        +-- supabase/
+
+packages/
++-- sdk/
++-- types/
++-- utils/
++-- validations/
 ```
 
 ---
@@ -225,12 +233,12 @@ app/
 
 ## Current Priorities
 
-1. Setup Next.js frontend
-2. Setup Tailwind CSS
-3. Setup Supabase client
-4. Build auth pages
-5. Build dashboard shell
-6. Build school onboarding
+1. Connect auth pages to Supabase Auth
+2. Build school onboarding logic
+3. Create school admin profile flow
+4. Auto-create school defaults
+5. Protect dashboard routes
+6. Review required RLS policies
 
 ---
 
