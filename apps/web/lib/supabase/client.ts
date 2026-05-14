@@ -10,5 +10,5 @@ export function createClient() {
     throw new Error("Missing Supabase environment variables.");
   }
 
-  return createBrowserClient(config.url, config.anonKey);
+  return createBrowserClient(config.url, config.publishableKey);
 }

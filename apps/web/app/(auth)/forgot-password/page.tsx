@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ForgotPasswordForm } from "./forgot-password-form";
 
 export default function ForgotPasswordPage() {
   return (
@@ -13,13 +11,7 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <form className="grid gap-4">
-        <Input label="Email" name="email" type="email" placeholder="admin@school.ac.ke" />
-        <Button type="submit">
-          <Mail className="size-4" aria-hidden="true" />
-          Send reset link
-        </Button>
-      </form>
+      <ForgotPasswordForm />
 
       <Link className="mt-6 block text-sm font-medium text-primary hover:underline" href="/login">
         Back to login

@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { Building2, CreditCard, GraduationCap, Users } from "lucide-react";
+import { Building2, CreditCard, GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { logout } from "@/app/actions";
+import { hasActiveRole, requireSessionProfile } from "@/lib/auth/session";
+
+export const dynamic = "force-dynamic";
 
 const cards = [
   {
@@ -24,7 +28,10 @@ const cards = [
   }
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { profile, primaryRole, roles } = await requireSessionProfile();
+  const isSuperAdmin = hasActiveRole(roles, "super_admin");
+
   return (
     <main className="min-h-screen bg-background">
       <header className="border-b bg-white">
@@ -32,25 +39,35 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-primary">School Management System</p>
             <h1 className="text-xl font-semibold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              {profile.full_name} • {primaryRole}
+            </p>
           </div>
-          <Link
-            className="rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80"
-            href="/login"
-          >
-            Sign out
-          </Link>
+          <form action={logout}>
+            <button className="rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">
+              Sign out
+            </button>
+          </form>
         </div>
       </header>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[240px_1fr]">
         <nav className="rounded-lg border bg-card p-3">
-          {["Overview", "Students", "Guardians", "Fees", "Payments", "Reports"].map((item) => (
+          {[
+            { label: "Overview", href: "/dashboard" },
+            ...(isSuperAdmin ? [{ label: "Admin panel", href: "/admin" }] : []),
+            { label: "Students", href: "/dashboard" },
+            { label: "Guardians", href: "/dashboard" },
+            { label: "Fees", href: "/dashboard" },
+            { label: "Payments", href: "/dashboard" },
+            { label: "Reports", href: "/dashboard" }
+          ].map((item) => (
             <Link
               className="block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-              href="/dashboard"
-              key={item}
+              href={item.href}
+              key={item.label}
             >
-              {item}
+              {item.label}
             </Link>
           ))}
         </nav>
@@ -62,6 +79,34 @@ export default function DashboardPage() {
               This shell is ready for Supabase Auth, school onboarding, profile creation, and
               default system initialization.
             </p>
+            {isSuperAdmin ? (
+              <Link
+                className="mt-5 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                href="/admin"
+              >
+                <ShieldCheck className="size-4" aria-hidden="true" />
+                Open admin panel
+              </Link>
+            ) : null}
+          </div>
+
+          <div className="rounded-lg border bg-card p-6">
+            <h2 className="text-lg font-semibold">Active roles</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              These roles come from the RBAC assignments when available, with `profiles.role` as a
+              fallback.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {roles.map((role) => (
+                <span
+                  className="rounded-md bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground"
+                  key={`${role.role}-${role.schoolId ?? "platform"}`}
+                >
+                  {role.displayName}
+                  {role.schoolId ? "" : " • Platform"}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

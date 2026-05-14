@@ -96,6 +96,48 @@ Data must always remain isolated per school.
 
 ---
 
+## User Roles
+
+Current MVP roles:
+- super_admin
+- school_admin
+- finance_officer
+- teacher
+- bursar
+- parent
+- student
+
+Display `bursar` as "Finance Officer" in the UI unless the database role is renamed by migration.
+
+Role scope rules:
+- super_admin users are platform owners and must have `profiles.school_id = null`
+- school_admin users belong to exactly one school through `profiles.school_id`
+- teacher, finance_officer, bursar, parent, and student users must be scoped to one school
+- parent access is limited to linked children through `student_guardians`
+- every school-scoped query must filter by `school_id`
+
+RBAC is backward compatible:
+- `profiles.role` and `profiles.school_id` remain the compatibility path for current RLS
+- `roles`, `permissions`, `role_permissions`, and `user_roles` support multi-role users
+- new user creation should write both `profiles.role` and `user_roles`
+- future RLS and dashboard routing should gradually move to `user_roles`
+
+Dashboard routing target:
+- super_admin -> `/dashboard/platform`
+- school_admin -> `/dashboard/admin`
+- teacher -> `/dashboard/teacher`
+- finance_officer -> `/dashboard/finance`
+- bursar -> `/dashboard/finance`
+- parent -> `/dashboard/parent`
+- student -> `/dashboard/student`
+
+School onboarding rule:
+- only super_admin can create schools
+- only super_admin can invite the first school_admin
+- school_admin users cannot create schools
+
+---
+
 ## Important Tables
 
 ### Core

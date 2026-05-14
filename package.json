@@ -10,7 +10,11 @@
     "dev": "npm run dev --workspace @sms/web",
     "build": "npm run build --workspace @sms/web",
     "lint": "npm run lint --workspace @sms/web",
-    "typecheck": "npm run typecheck --workspace @sms/web"
+    "typecheck": "npm run typecheck --workspace @sms/web",
+    "invite:super-admin": "node --env-file=.env.local scripts/invite-super-admin.mjs",
+    "delete:user": "node --env-file=.env.local scripts/delete-user.mjs",
+    "create:super-admin": "node --env-file=.env.local scripts/create-super-admin.mjs",
+    "assign:user-role": "node --env-file=.env.local scripts/assign-user-role.mjs"
   },
   "engines": {
     "node": ">=20"
