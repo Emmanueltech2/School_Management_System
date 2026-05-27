@@ -1,37 +1,86 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
-export function AuthCallbackClient() {
+type AuthCallbackClientProps = {
+  code?: string;
+  errorDescription?: string;
+  initialReady: boolean;
+  initialStatus: string;
+};
+
+export function AuthCallbackClient({
+  code,
+  errorDescription,
+  initialReady,
+  initialStatus
+}: AuthCallbackClientProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
-  const [status, setStatus] = useState("Preparing your account...");
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState(initialStatus);
+  const [ready, setReady] = useState(initialReady);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    async function prepareSession() {
-      const urlErrorDescription = searchParams.get("error_description");
-
-      if (urlErrorDescription) {
-        setStatus(urlErrorDescription);
+    async function prepareClientSession() {
+      if (initialReady) {
         return;
       }
 
-      const code = searchParams.get("code");
+      if (errorDescription) {
+        setStatus(errorDescription);
+        return;
+      }
+
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const hashError = hashParams.get("error_description");
+
+      if (hashError) {
+        setStatus(hashError);
+        return;
+      }
+
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+
+        if (error) {
+          setStatus(error.message);
+          return;
+        }
+
+        window.history.replaceState(null, "", window.location.pathname);
+        setReady(true);
+        setStatus("Create your password to finish setup.");
+        return;
+      }
 
       if (code) {
-        setStatus(
-          "This email link is using the wrong Supabase template format. It must use token_hash and open /auth/confirm first."
-        );
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (error) {
+          setStatus(
+            `${error.message}. Send a fresh reset email from the same browser, or use the token_hash Supabase email template.`
+          );
+          return;
+        }
+
+        window.history.replaceState(null, "", window.location.pathname);
+        setReady(true);
+        setStatus("Create your password to finish setup.");
         return;
       }
 
@@ -45,11 +94,11 @@ export function AuthCallbackClient() {
         return;
       }
 
-      setStatus("No verified session found. Open the newest invite or reset email link.");
+      setStatus("No verified reset session found. Open the newest password reset email link.");
     }
 
-    void prepareSession();
-  }, [searchParams, supabase]);
+    void prepareClientSession();
+  }, [code, errorDescription, initialReady, supabase]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,6 +122,7 @@ export function AuthCallbackClient() {
       return;
     }
 
+    setStatus("Password updated successfully. Redirecting...");
     router.push("/dashboard");
   }
 
@@ -113,7 +163,14 @@ export function AuthCallbackClient() {
             {isSubmitting ? "Saving..." : "Save password"}
           </Button>
         </form>
-      ) : null}
+      ) : (
+        <Link
+          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          href="/forgot-password"
+        >
+          Request a new reset link
+        </Link>
+      )}
     </div>
   );
 }

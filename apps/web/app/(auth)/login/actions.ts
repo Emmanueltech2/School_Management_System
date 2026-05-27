@@ -2,7 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getDashboardPath, getProfileForUser, getRolesForUser } from "@/lib/auth/session";
+import {
+  getDashboardPath,
+  getPrimaryRole,
+  getProfileForUser,
+  getRolesForUser
+} from "@/lib/auth/session";
 
 type LoginState = {
   ok: boolean;
@@ -57,9 +62,7 @@ export async function login(
     .eq("id", data.user.id);
 
   const roles = await getRolesForUser(supabase, profile);
-  const primaryRole = roles.some((activeRole) => activeRole.role === "super_admin")
-    ? "super_admin"
-    : profile.role;
+  const primaryRole = getPrimaryRole(profile, roles);
 
   redirect(getDashboardPath(primaryRole));
 }

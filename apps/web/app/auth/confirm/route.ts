@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   if (!tokenHash) {
     return NextResponse.redirect(
       new URL(
-        "/auth/callback?error=missing-token&error_description=The+email+link+is+missing+token_hash.+Check+the+Supabase+email+template.",
+        "/auth/callback?error=missing-token&error_description=The+email+link+is+missing+token_hash.+Use+the+Supabase+email+template+variables+TokenHash+and+SiteURL,+then+send+a+new+email.",
         requestUrl.origin
       )
     );

@@ -4,6 +4,10 @@ export function getSiteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL ?? fallbackSiteUrl;
 }
 
-export function getConfirmUrl(type: "invite" | "recovery") {
-  return `${getSiteUrl()}/auth/confirm?type=${type}&next=/auth/callback`;
+export function getAuthCallbackUrl() {
+  return `${getSiteUrl()}/auth/callback`;
+}
+
+export function getEmailTemplateLink(type: "invite" | "recovery") {
+  return `${getSiteUrl()}/auth/confirm?token_hash={{ .TokenHash }}&type=${type}&next=/auth/callback`;
 }
