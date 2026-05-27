@@ -14,7 +14,8 @@
     "invite:super-admin": "node --env-file=.env.local scripts/invite-super-admin.mjs",
     "delete:user": "node --env-file=.env.local scripts/delete-user.mjs",
     "create:super-admin": "node --env-file=.env.local scripts/create-super-admin.mjs",
-    "assign:user-role": "node --env-file=.env.local scripts/assign-user-role.mjs"
+    "assign:user-role": "node --env-file=.env.local scripts/assign-user-role.mjs",
+    "set:user-password": "node --env-file=.env.local scripts/set-user-password.mjs"
   },
   "engines": {
     "node": ">=20"

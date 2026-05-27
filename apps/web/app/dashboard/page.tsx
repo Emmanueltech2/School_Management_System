@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { Building2, CreditCard, GraduationCap, ShieldCheck, Users } from "lucide-react";
 import { logout } from "@/app/actions";
-import { hasActiveRole, requireSessionProfile } from "@/lib/auth/session";
+import {
+  formatRoleName,
+  getDashboardPath,
+  hasActiveRole,
+  requireSessionProfile
+} from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { RolePreviewSwitcher } from "./_components/role-preview-switcher";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +35,48 @@ const cards = [
   }
 ];
 
+type SchoolSummary = {
+  name: string;
+  code: string | null;
+  email: string | null;
+  phone: string | null;
+  status: string;
+};
+
+async function getSchoolSummary(schoolId: string | null) {
+  if (!schoolId) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("schools")
+    .select("name, code, email, phone, status")
+    .eq("id", schoolId)
+    .maybeSingle();
+
+  if (error) {
+    return null;
+  }
+
+  return data as SchoolSummary | null;
+}
+
 export default async function DashboardPage() {
   const { profile, primaryRole, roles } = await requireSessionProfile();
   const isSuperAdmin = hasActiveRole(roles, "super_admin");
+  const primaryRoleLabel =
+    roles.find((role) => role.role === primaryRole)?.displayName ?? formatRoleName(primaryRole);
+  const school = await getSchoolSummary(profile.school_id);
+  const roleLinks = roles
+    .map((role) => ({
+      label: role.displayName,
+      href: getDashboardPath(role.role)
+    }))
+    .filter(
+      (item, index, items) =>
+        item.href !== "/dashboard" && items.findIndex((candidate) => candidate.href === item.href) === index
+    );
 
   return (
     <main className="min-h-screen bg-background">
@@ -40,14 +86,17 @@ export default async function DashboardPage() {
             <p className="text-sm font-medium text-primary">School Management System</p>
             <h1 className="text-xl font-semibold">Dashboard</h1>
             <p className="text-sm text-muted-foreground">
-              {profile.full_name} • {primaryRole}
+              {profile.full_name} • {primaryRoleLabel}
             </p>
           </div>
-          <form action={logout}>
-            <button className="rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            {isSuperAdmin ? <RolePreviewSwitcher /> : null}
+            <form action={logout}>
+              <button className="rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
@@ -56,6 +105,7 @@ export default async function DashboardPage() {
           {[
             { label: "Overview", href: "/dashboard" },
             ...(isSuperAdmin ? [{ label: "Admin panel", href: "/admin" }] : []),
+            ...roleLinks,
             { label: "Students", href: "/dashboard" },
             { label: "Guardians", href: "/dashboard" },
             { label: "Fees", href: "/dashboard" },
@@ -89,6 +139,24 @@ export default async function DashboardPage() {
               </Link>
             ) : null}
           </div>
+
+          {school ? (
+            <div className="rounded-lg border bg-card p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-primary">School workspace</p>
+                  <h2 className="mt-1 text-2xl font-semibold">{school.name}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {school.code ?? "No code"} • {school.email ?? "No email"} •{" "}
+                    {school.phone ?? "No phone"}
+                  </p>
+                </div>
+                <span className="rounded-md bg-secondary px-3 py-1 text-sm font-medium capitalize text-secondary-foreground">
+                  {school.status}
+                </span>
+              </div>
+            </div>
+          ) : null}
 
           <div className="rounded-lg border bg-card p-6">
             <h2 className="text-lg font-semibold">Active roles</h2>

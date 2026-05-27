@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getConfirmUrl } from "@/lib/auth/urls";
+import { getAuthCallbackUrl } from "@/lib/auth/urls";
 
 type ForgotPasswordState = {
   ok: boolean;
@@ -24,7 +24,7 @@ export async function sendPasswordReset(
   const email = value.trim().toLowerCase();
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: getConfirmUrl("recovery")
+    redirectTo: getAuthCallbackUrl()
   });
 
   if (error) {

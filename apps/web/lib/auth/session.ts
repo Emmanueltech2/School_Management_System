@@ -31,17 +31,17 @@ export function getDashboardPath(role: string) {
     case "super_admin":
       return "/admin";
     case "school_admin":
-      return "/dashboard";
+      return "/dashboard/admin";
     case "teacher":
-      return "/dashboard";
+      return "/dashboard/teacher";
     case "finance_officer":
-      return "/dashboard";
+      return "/dashboard/finance";
     case "bursar":
-      return "/dashboard";
+      return "/dashboard/finance";
     case "parent":
-      return "/dashboard";
+      return "/dashboard/parent";
     case "student":
-      return "/dashboard";
+      return "/dashboard/student";
     default:
       return "/dashboard";
   }
@@ -66,7 +66,7 @@ export function formatRoleName(role: string) {
     .join(" ");
 }
 
-function getPrimaryRole(profile: Profile, roles: ActiveRole[]) {
+export function getPrimaryRole(profile: Profile, roles: ActiveRole[]) {
   const priority = [
     "super_admin",
     "school_admin",
@@ -167,6 +167,20 @@ export async function requireSuperAdmin() {
   const sessionProfile = await requireSessionProfile();
 
   if (!hasActiveRole(sessionProfile.roles, "super_admin")) {
+    redirect(getDashboardPath(sessionProfile.primaryRole));
+  }
+
+  return sessionProfile;
+}
+
+export async function requireAnyRole(allowedRoles: string[]) {
+  const sessionProfile = await requireSessionProfile();
+
+  const canAccess =
+    hasActiveRole(sessionProfile.roles, "super_admin") ||
+    allowedRoles.some((role) => hasActiveRole(sessionProfile.roles, role));
+
+  if (!canAccess) {
     redirect(getDashboardPath(sessionProfile.primaryRole));
   }
 
