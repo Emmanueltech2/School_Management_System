@@ -131,26 +131,31 @@ export async function getRolesForUser(
 }
 
 export async function getSessionProfile(): Promise<SessionProfile | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser();
 
-  if (error || !user) {
+    if (error || !user) {
+      return null;
+    }
+
+    const profile = await getProfileForUser(supabase, user.id);
+
+    if (!profile || profile.is_active === false) {
+      return null;
+    }
+
+    const roles = await getRolesForUser(supabase, profile);
+    const primaryRole = getPrimaryRole(profile, roles);
+
+    return { user, profile, roles, primaryRole };
+  } catch (error) {
+    console.error("Session profile lookup failed", error);
     return null;
   }
-
-  const profile = await getProfileForUser(supabase, user.id);
-
-  if (!profile || profile.is_active === false) {
-    return null;
-  }
-
-  const roles = await getRolesForUser(supabase, profile);
-  const primaryRole = getPrimaryRole(profile, roles);
-
-  return { user, profile, roles, primaryRole };
 }
 
 export async function requireSessionProfile() {

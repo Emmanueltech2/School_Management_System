@@ -28,41 +28,60 @@ export async function login(
   _previousState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
-  const supabase = await createClient();
+  let redirectTo: string | null = null;
 
-  const email = getRequiredString(formData, "email").toLowerCase();
-  const password = getRequiredString(formData, "password");
+  try {
+    const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+    const email = getRequiredString(formData, "email").toLowerCase();
+    const password = getRequiredString(formData, "password");
 
-  if (error || !data.user) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error || !data.user) {
+      return {
+        ok: false,
+        message: error?.message ?? "Could not sign in."
+      };
+    }
+
+    const profile = await getProfileForUser(supabase, data.user.id);
+
+    if (!profile || profile.is_active === false) {
+      await supabase.auth.signOut();
+
+      return {
+        ok: false,
+        message: "Your account profile is not active. Contact support."
+      };
+    }
+
+    await supabase
+      .from("profiles")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("id", data.user.id);
+
+    const roles = await getRolesForUser(supabase, profile);
+    const primaryRole = getPrimaryRole(profile, roles);
+    redirectTo = getDashboardPath(primaryRole);
+  } catch (error) {
+    console.error("Login failed", error);
+
     return {
       ok: false,
-      message: error?.message ?? "Could not sign in."
+      message: "Sign in could not be completed. Check the Vercel Supabase environment variables and profile setup."
     };
   }
 
-  const profile = await getProfileForUser(supabase, data.user.id);
-
-  if (!profile || profile.is_active === false) {
-    await supabase.auth.signOut();
-
-    return {
-      ok: false,
-      message: "Your account profile is not active. Contact support."
-    };
+  if (redirectTo) {
+    redirect(redirectTo);
   }
 
-  await supabase
-    .from("profiles")
-    .update({ last_login_at: new Date().toISOString() })
-    .eq("id", data.user.id);
-
-  const roles = await getRolesForUser(supabase, profile);
-  const primaryRole = getPrimaryRole(profile, roles);
-
-  redirect(getDashboardPath(primaryRole));
+  return {
+    ok: false,
+    message: "Could not determine where to send this user after sign in."
+  };
 }
