@@ -5,7 +5,6 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
-  ClipboardList,
   CreditCard,
   FileText,
   Filter,
